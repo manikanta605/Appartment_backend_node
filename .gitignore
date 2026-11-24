@@ -4,3 +4,6 @@ node_modules/
 *.zip
 .DS_Store
 Thumbs.db
+serviceAccountKey.json
+config/serviceAccountKey.json
+*serviceAccount*.json

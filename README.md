@@ -37,7 +37,7 @@ DB_STORAGE=./residex.sqlite
 #### 🔥 Firebase Cloud Messaging (FCM) Push Notifications:
 1. Create a Firebase project at https://console.firebase.google.com/
 2. Go to **Project Settings** > **Service accounts**, click **Generate new private key**.
-3. Save the downloaded JSON file as `backend/config/serviceAccountKey.json`.
+3. Save the downloaded JSON file as `backend/config/serviceAccountKey.json`. (On Render/cloud, paste the JSON content directly into the `FIREBASE_SERVICE_ACCOUNT` environment variable).
 4. Add your Android app (`com.residex.app`) in Firebase, download `google-services.json`, and place it in `mobileapp/android/app/google-services.json`.
 *(Note: If credentials are not yet supplied, the system operates seamlessly in smart simulation & Web Audio chime mode).*
 

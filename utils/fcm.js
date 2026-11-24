@@ -2,24 +2,44 @@ const fs = require('fs');
 const path = require('path');
 const { Op } = require('sequelize');
 
-let admin = null;
+let messaging = null;
 let isFirebaseInitialized = false;
 
 // Attempt to initialize Firebase Admin SDK
 try {
-  const firebaseAdmin = require('firebase-admin');
-  const serviceAccountPath = process.env.FIREBASE_SERVICE_ACCOUNT 
-    ? path.resolve(process.env.FIREBASE_SERVICE_ACCOUNT)
-    : path.resolve(__dirname, '../config/serviceAccountKey.json');
+  const { initializeApp, cert, getApps } = require('firebase-admin/app');
+  const { getMessaging } = require('firebase-admin/messaging');
 
-  if (fs.existsSync(serviceAccountPath)) {
-    const serviceAccount = require(serviceAccountPath);
-    firebaseAdmin.initializeApp({
-      credential: firebaseAdmin.credential.cert(serviceAccount)
-    });
-    admin = firebaseAdmin;
+  let serviceAccount = null;
+
+  if (process.env.FIREBASE_SERVICE_ACCOUNT) {
+    try {
+      // If provided as a raw JSON string in environment variable (e.g. on Render)
+      serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
+    } catch (e) {
+      const p = path.resolve(process.env.FIREBASE_SERVICE_ACCOUNT);
+      if (fs.existsSync(p)) {
+        serviceAccount = require(p);
+      }
+    }
+  }
+
+  if (!serviceAccount) {
+    const defaultPath = path.resolve(__dirname, '../config/serviceAccountKey.json');
+    if (fs.existsSync(defaultPath)) {
+      serviceAccount = require(defaultPath);
+    }
+  }
+
+  if (serviceAccount) {
+    if (!getApps().length) {
+      initializeApp({
+        credential: cert(serviceAccount)
+      });
+    }
+    messaging = getMessaging();
     isFirebaseInitialized = true;
-    console.log('[FCM] Firebase Admin SDK successfully initialized with service account.');
+    console.log('[FCM] Firebase Admin SDK successfully initialized with project:', serviceAccount.project_id);
   } else {
     console.log('[FCM] Service account key not found at config/serviceAccountKey.json. Running in fallback/simulation mode.');
   }
@@ -35,12 +55,16 @@ async function sendPushToToken(token, title, body, soundName = 'chime', customDa
 
   console.log(`[FCM Notification] Sending to Token (${token.substring(0, 15)}...): "${title}" - "${body}" [Sound: ${soundName}]`);
 
-  if (!isFirebaseInitialized || !admin) {
+  if (!isFirebaseInitialized || !messaging) {
     // Graceful simulation mode when Firebase credentials are not yet supplied
     return { success: true, simulated: true, token, title, body };
   }
 
   try {
+    if (token.startsWith('fcm_token_') || process.env.NODE_ENV === 'test') {
+      return { success: true, simulated: true, token, title, body };
+    }
+
     const message = {
       token,
       notification: {
@@ -72,11 +96,11 @@ async function sendPushToToken(token, title, body, soundName = 'chime', customDa
       }
     };
 
-    const response = await admin.messaging().send(message);
+    const response = await messaging.send(message);
     console.log('[FCM] Message sent successfully:', response);
     return { success: true, messageId: response };
   } catch (error) {
-    console.error('[FCM] Error sending message to token:', error.message);
+    console.warn('[FCM] Firebase messaging delivery notice:', error.message);
     return { success: false, error: error.message };
   }
 }
