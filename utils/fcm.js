@@ -65,25 +65,31 @@ async function sendPushToToken(token, title, body, soundName = 'chime', customDa
       return { success: true, simulated: true, token, title, body };
     }
 
+    const stringifiedData = {};
+    if (customData) {
+      for (const [key, val] of Object.entries(customData)) {
+        if (val !== undefined && val !== null) {
+          stringifiedData[key] = typeof val === 'object' ? JSON.stringify(val) : String(val);
+        }
+      }
+    }
+    stringifiedData.sound = soundName;
+
     const message = {
       token,
       notification: {
         title,
         body
       },
-      data: {
-        ...customData,
-        sound: soundName,
-        click_action: 'FLUTTER_NOTIFICATION_CLICK'
-      },
+      data: stringifiedData,
       android: {
         priority: 'high',
         notification: {
-          sound: 'default',
           channelId: 'residex_alerts',
           priority: 'max',
           defaultVibrateTimings: true,
-          defaultSound: true
+          defaultSound: true,
+          sound: 'default'
         }
       },
       apns: {
