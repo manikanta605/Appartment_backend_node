@@ -142,3 +142,33 @@ exports.createUser = async (req, res) => {
     res.status(400).json({ message: 'Error creating user', error: err.message });
   }
 };
+
+exports.getFcmStatus = (req, res) => {
+  const fcm = require('../utils/fcm');
+  const fs = require('fs');
+  const path = require('path');
+  const saPath = path.resolve(__dirname, '../config/serviceAccountKey.json');
+  res.json({
+    isFirebaseInitialized: fcm.isFirebaseInitialized(),
+    hasServiceAccountFile: fs.existsSync(saPath),
+    hasEnvVar: !!process.env.FIREBASE_SERVICE_ACCOUNT
+  });
+};
+
+exports.sendTestPush = async (req, res) => {
+  try {
+    const { flat_no } = req.body;
+    const targetFlat = flat_no || 'A-101';
+    const { sendPushToUser } = require('../utils/fcm');
+    const result = await sendPushToUser(
+      targetFlat,
+      'Visitor Alert · Doorbell Chime',
+      `Amazon Delivery is at the security gate for Flat ${targetFlat}. Please confirm entry.`,
+      'chime',
+      { flat_no: targetFlat, type: 'VisitorAlert' }
+    );
+    res.json({ message: `Push trigger sent to Flat ${targetFlat}`, result });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
