@@ -30,6 +30,21 @@ exports.create = async (req, res) => {
       related_id: post.id
     });
 
+    // Send FCM Push notification with sound to society members
+    try {
+      const { sendPushToSociety } = require('../utils/fcm');
+      await sendPushToSociety(
+        req.society_id,
+        'New Community Post',
+        `${req.user.name || req.user.username}: "${content.substring(0, 75)}${content.length > 75 ? '...' : ''}"`,
+        'notice',
+        { type: 'Community', postId: String(post.id) },
+        req.user.id
+      );
+    } catch(e) {
+      console.warn('FCM broadcast warning:', e.message);
+    }
+
     res.status(201).json(post);
   } catch (err) {
     res.status(500).json({ message: 'Error creating post', error: err.message });

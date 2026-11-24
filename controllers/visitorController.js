@@ -23,8 +23,19 @@ exports.createVisitor = async (req, res) => {
 
     // Notify resident if watchman entered it as pending
     if (initialStatus === 'Pending') {
-      const { sendPushToUser } = require('../utils/fcm');
-      await sendPushToUser(flat_no, 'Visitor Alert', `${name} is at the gate.`, 'chime');
+      try {
+        const { sendPushToUser } = require('../utils/fcm');
+        await sendPushToUser(
+          flat_no,
+          'Visitor Alert · Doorbell Chime',
+          `${name} is at the security gate for Flat ${flat_no}. Please confirm entry.`,
+          'chime',
+          { visitorId: String(visitor.id), flat_no, type: 'VisitorAlert' },
+          req.society_id
+        );
+      } catch (e) {
+        console.warn('FCM visitor push warning:', e.message);
+      }
 
       await Notification.create({
         society_id: req.society_id,
@@ -87,6 +98,28 @@ exports.updateStatus = async (req, res) => {
       target_flat: null,
       is_read: false
     });
+
+    // Send push notification to gatekeepers and resident with sound
+    try {
+      const { sendPushToWatchmen, sendPushToUser } = require('../utils/fcm');
+      await sendPushToWatchmen(
+        req.society_id,
+        `Gate Update: ${visitor.name}`,
+        `Flat ${visitor.flat_no} marked entry for ${visitor.name} as ${status}.`,
+        'chime',
+        { visitorId: String(visitor.id), status, flat_no: visitor.flat_no }
+      );
+      await sendPushToUser(
+        visitor.flat_no,
+        `Visitor ${status}`,
+        `${visitor.name} has been marked as ${status}.`,
+        'chime',
+        { visitorId: String(visitor.id), status },
+        req.society_id
+      );
+    } catch (e) {
+      console.warn('FCM status update warning:', e.message);
+    }
 
     res.json(visitor);
   } catch (err) {

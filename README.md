@@ -34,6 +34,13 @@ DB_DIALECT=sqlite
 DB_STORAGE=./residex.sqlite
 ```
 
+#### 🔥 Firebase Cloud Messaging (FCM) Push Notifications:
+1. Create a Firebase project at https://console.firebase.google.com/
+2. Go to **Project Settings** > **Service accounts**, click **Generate new private key**.
+3. Save the downloaded JSON file as `backend/config/serviceAccountKey.json`.
+4. Add your Android app (`com.residex.app`) in Firebase, download `google-services.json`, and place it in `mobileapp/android/app/google-services.json`.
+*(Note: If credentials are not yet supplied, the system operates seamlessly in smart simulation & Web Audio chime mode).*
+
 ### 3. Seed Database
 Initializes Super Admin, Societies (`SNC`, `GVH`), initial flats, residents, and gatekeeper accounts:
 ```bash

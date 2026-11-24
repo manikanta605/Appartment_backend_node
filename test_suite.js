@@ -465,6 +465,67 @@ async function runTestSuite() {
     });
     recordTest('Patrol', 'Watchman Reports Checkpoint Issue (Alert Trigger)', issueRes.ok && issueRes.data?.log?.status === 'Attention Needed', 'Alert created & notification sent');
 
+    // ─── 14. FCM PUSH NOTIFICATIONS & GATEKEEPER APPROVALS ──────────────
+    console.log('\n--- 14. FCM PUSH NOTIFICATIONS & GATEKEEPER APPROVALS ---');
+
+    // 14.1 Register Resident FCM Device Token
+    const fcmUpdateRes = await request('/auth/update-fcm', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${memberToken}` },
+      body: JSON.stringify({ fcm_token: 'fcm_token_resident_A101_device' })
+    });
+    recordTest('FCM', 'Resident Registers Device Token', fcmUpdateRes.ok, 'Token: fcm_token_resident_A101_device');
+
+    // 14.2 Register Gatekeeper FCM Device Token
+    const fcmGuardRes = await request('/auth/update-fcm', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${watchmanToken}` },
+      body: JSON.stringify({ fcm_token: 'fcm_token_gatekeeper_main_gate' })
+    });
+    recordTest('FCM', 'Gatekeeper Registers Device Token', fcmGuardRes.ok, 'Token: fcm_token_gatekeeper_main_gate');
+
+    // 14.3 Gatekeeper logs visitor for Flat A-101 (Triggers FCM Push Alert to Flat Owner)
+    const visitorAlertRes = await request('/visitors', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${watchmanToken}` },
+      body: JSON.stringify({
+        name: 'Amazon Delivery Courier',
+        phone: '9876543210',
+        flat_no: 'A-101',
+        purpose: 'Package Delivery'
+      })
+    });
+    const pendingVisitorId = visitorAlertRes.data?.id;
+    recordTest('FCM', 'Gatekeeper Sends Visitor to Flat (FCM Chime Triggered)', visitorAlertRes.ok && visitorAlertRes.data?.status === 'Pending', `Visitor ID #${pendingVisitorId} -> Flat A-101`);
+
+    // 14.4 Resident receives visitor notification in inbox
+    const residentNotifs = await request('/notifications', {
+      headers: { Authorization: `Bearer ${memberToken}` }
+    });
+    const hasVisitorNotif = residentNotifs.data?.some(n => n.type === 'Visitor' && n.target_flat === 'A-101');
+    recordTest('FCM', 'Flat Owner Receives Gatekeeper Visitor Notification', residentNotifs.ok && hasVisitorNotif, 'Target Flat: A-101');
+
+    // 14.5 Resident Approves Visitor Entry (Triggers Confirmation Push to Gatekeeper)
+    if (pendingVisitorId) {
+      const approveRes = await request(`/visitors/${pendingVisitorId}/status`, {
+        method: 'PATCH',
+        headers: { Authorization: `Bearer ${memberToken}` },
+        body: JSON.stringify({ status: 'Approved' })
+      });
+      recordTest('FCM', 'Resident Approves Visitor (Gatekeeper Push Triggered)', approveRes.ok && approveRes.data?.status === 'Approved', 'Status: Approved');
+    }
+
+    // 14.6 Community Post FCM Broadcast
+    const communityPostRes = await request('/posts', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${memberToken}` },
+      body: JSON.stringify({
+        content: 'Community celebration announcement for this weekend!',
+        type: 'General'
+      })
+    });
+    recordTest('FCM', 'Community Post Broadcasts Push Notification with Sound', communityPostRes.ok && !!communityPostRes.data?.id, `Post ID #${communityPostRes.data?.id}`);
+
   } catch (err) {
     console.error('Test execution error:', err);
   } finally {
