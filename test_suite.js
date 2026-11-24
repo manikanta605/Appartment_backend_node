@@ -5,7 +5,7 @@ const { sequelize } = require('./config/database');
 const app = require('./server');
 
 const TEST_PORT = 5055;
-const BASE_URL = `http://localhost:${TEST_PORT}/api`;
+const BASE_URL = `http://127.0.0.1:${TEST_PORT}/api`;
 
 const results = [];
 
@@ -40,8 +40,8 @@ async function runTestSuite() {
   // Start test server
   let server;
   try {
-    server = app.listen(TEST_PORT);
-    console.log(`Test Express server running at http://localhost:${TEST_PORT}\n`);
+    server = app.listen(TEST_PORT, '127.0.0.1');
+    console.log(`Test Express server running at http://127.0.0.1:${TEST_PORT}\n`);
   } catch (e) {
     console.error('Failed to start test server:', e);
     process.exit(1);
@@ -425,6 +425,45 @@ async function runTestSuite() {
       });
       recordTest('Members', 'Admin Deletes Resident Member', delMemberRes.ok, 'Deleted cleanly');
     }
+
+    // ─── 13. SECURITY PATROL & CHECKPOINTS ──────────────────────────────
+    console.log('\n--- 13. SECURITY PATROL & CHECKPOINTS ---');
+
+    // 13.1 Gatekeeper fetches checkpoints
+    const cpRes = await request('/patrol/checkpoints', {
+      headers: { Authorization: `Bearer ${watchmanToken}` }
+    });
+    recordTest('Patrol', 'Gatekeeper Fetches Checkpoint Board', cpRes.ok && Array.isArray(cpRes.data) && cpRes.data.length >= 7, `${cpRes.data?.length} Checkpoints available`);
+
+    // 13.2 Gatekeeper records checkpoint scan
+    const scanRes = await request('/patrol/scan', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${watchmanToken}` },
+      body: JSON.stringify({
+        checkpoint_code: 'CP-01',
+        status: 'All Clear',
+        notes: 'Main gate verified and clear during 9 AM round'
+      })
+    });
+    recordTest('Patrol', 'Gatekeeper Scans Checkpoint CP-01', scanRes.ok && scanRes.data?.log?.checkpoint_code === 'CP-01', 'Checkpoint verified');
+
+    // 13.3 Resident views live patrol logs & coverage
+    const resLogs = await request('/patrol/logs', {
+      headers: { Authorization: `Bearer ${memberToken}` }
+    });
+    recordTest('Patrol', 'Resident Views Live Patrol Timeline', resLogs.ok && resLogs.data?.logs?.length > 0, `${resLogs.data?.logs?.length} Logs loaded for society`);
+
+    // 13.4 Watchman reports attention issue at Basement
+    const issueRes = await request('/patrol/scan', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${watchmanToken}` },
+      body: JSON.stringify({
+        checkpoint_code: 'CP-04',
+        status: 'Attention Needed',
+        notes: 'Water dripping near parking pillar P-12'
+      })
+    });
+    recordTest('Patrol', 'Watchman Reports Checkpoint Issue (Alert Trigger)', issueRes.ok && issueRes.data?.log?.status === 'Attention Needed', 'Alert created & notification sent');
 
   } catch (err) {
     console.error('Test execution error:', err);

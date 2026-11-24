@@ -17,6 +17,7 @@ const eventRoutes = require('./routes/eventRoutes');
 const amenityRoutes = require('./routes/amenityRoutes');
 const visitorRoutes = require('./routes/visitorRoutes');
 const razorpayRoutes = require('./routes/razorpayRoutes');
+const patrolRoutes = require('./routes/patrolRoutes');
 
 const app = express();
 
@@ -50,6 +51,7 @@ app.use('/api/events', eventRoutes);
 app.use('/api/amenities', amenityRoutes);
 app.use('/api/visitors', visitorRoutes);
 app.use('/api/razorpay', razorpayRoutes);
+app.use('/api/patrol', patrolRoutes);
 
 const { initMaintenanceCron } = require('./utils/cron');
 

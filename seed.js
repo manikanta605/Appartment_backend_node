@@ -200,6 +200,27 @@ async function seed() {
     ]);
     console.log('✅ SNC Amenities seeded');
 
+    // 7.1 Security Patrol Checkpoints & Initial Scans for SNC
+    const { PatrolCheckpoint, PatrolLog } = require('./models');
+    await PatrolCheckpoint.bulkCreate([
+      { society_id: snc.id, code: 'CP-01', name: 'Main Security Gate & Entry Post', location: 'Ground Floor, North Gate', qr_data: 'RESIDEX:PATROL:CP-01:Main_Security_Gate', order: 1 },
+      { society_id: snc.id, code: 'CP-02', name: 'Block A - Ground Floor Lobby', location: 'Block A Lift & Mailbox Area', qr_data: 'RESIDEX:PATROL:CP-02:Block_A_Lobby', order: 2 },
+      { society_id: snc.id, code: 'CP-03', name: 'Block A - Terrace & Solar Yard', location: 'Roof Access & Solar Inverters', qr_data: 'RESIDEX:PATROL:CP-03:Block_A_Terrace', order: 3 },
+      { society_id: snc.id, code: 'CP-04', name: 'Basement Parking (Level -1)', location: 'Basement North-East Section', qr_data: 'RESIDEX:PATROL:CP-04:Basement_Parking', order: 4 },
+      { society_id: snc.id, code: 'CP-05', name: 'Generator & Transformer Yard', location: 'South Perimeter Utility Area', qr_data: 'RESIDEX:PATROL:CP-05:Generator_Room', order: 5 },
+      { society_id: snc.id, code: 'CP-06', name: 'Clubhouse, Gym & Pool Area', location: 'Central Amenity Complex', qr_data: 'RESIDEX:PATROL:CP-06:Clubhouse_Pool', order: 6 },
+      { society_id: snc.id, code: 'CP-07', name: 'Back Gate & Perimeter Wall', location: 'South-West Boundary', qr_data: 'RESIDEX:PATROL:CP-07:Back_Gate', order: 7 }
+    ]);
+
+    const todayStr = new Date().toISOString().split('T')[0];
+    await PatrolLog.bulkCreate([
+      { society_id: snc.id, checkpoint_code: 'CP-01', checkpoint_name: 'Main Security Gate & Entry Post', guard_name: 'Main Gate Guard', scanned_at: new Date(Date.now() - 3600000), date: todayStr, time: '08:15 AM', status: 'All Clear', notes: 'Gates secured, visitor register updated' },
+      { society_id: snc.id, checkpoint_code: 'CP-02', checkpoint_name: 'Block A - Ground Floor Lobby', guard_name: 'Main Gate Guard', scanned_at: new Date(Date.now() - 3000000), date: todayStr, time: '08:25 AM', status: 'All Clear', notes: 'Lifts operational, no unauthorized parcels' },
+      { society_id: snc.id, checkpoint_code: 'CP-03', checkpoint_name: 'Block A - Terrace & Solar Yard', guard_name: 'Main Gate Guard', scanned_at: new Date(Date.now() - 2400000), date: todayStr, time: '08:35 AM', status: 'All Clear', notes: 'Terrace door latched, solar inverters normal' },
+      { society_id: snc.id, checkpoint_code: 'CP-04', checkpoint_name: 'Basement Parking (Level -1)', guard_name: 'Main Gate Guard', scanned_at: new Date(Date.now() - 1800000), date: todayStr, time: '08:45 AM', status: 'All Clear', notes: 'Vehicles parked in designated slots' }
+    ]);
+    console.log('✅ SNC Patrol Checkpoints & Sample Scans seeded');
+
     // 8. Create Second Society (SaaS Tenant): Green Valley Heights (Bangalore)
     const gvh = await Society.create({
       name: 'Green Valley Heights',

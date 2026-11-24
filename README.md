@@ -7,6 +7,7 @@ Production-ready Node.js & Express multi-tenant SaaS backend for residential soc
 - **Dual Database Engine**: Native support for **SQLite** (self-contained local file) and **PostgreSQL**.
 - **Automated Monthly Dues Engine**: Runs on the 1st of every month (`Current Month Maintenance + Unpaid Previous Dues = Total Payable`).
 - **Visitor Security Pass**: 6-digit PIN pass generation for residents and instant gatekeeper verification terminal.
+- **Security Patrol & QR Scanner Rounds**: Physical checkpoint scanning (Terrace, Basement, Generator Room, Gates) with live resident logs and alerts.
 - **Payment Gateway**: Integrated Razorpay order creation and cryptographic signature verification.
 - **Society Amenities & Bookings**: Facility management with admin approval workflows.
 - **Complaints & Helpdesk**: Ticket lifecycle (`Open` ➔ `In Progress` ➔ `Resolved`).
@@ -62,3 +63,4 @@ node test_suite.js
 - **SNC Gatekeeper**: `watchman` / `gatekeeper123` (Code: `SNC`)
 - **GVH Society Admin**: `gvh_admin` / `gvh123` (Code: `GVH`)
 - **GVH Resident**: `9880112233` / `b101123` (Flat B-101)
+

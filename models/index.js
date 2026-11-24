@@ -12,6 +12,8 @@ const EventMember = require('./EventMember');
 const Amenity = require('./Amenity');
 const Booking = require('./Booking');
 const Visitor = require('./Visitor');
+const PatrolCheckpoint = require('./PatrolCheckpoint');
+const PatrolLog = require('./PatrolLog');
 
 // Society multi-tenant relationships
 Society.hasMany(User, { foreignKey: 'society_id' });
@@ -47,6 +49,12 @@ Booking.belongsTo(Society, { foreignKey: 'society_id' });
 Society.hasMany(Visitor, { foreignKey: 'society_id' });
 Visitor.belongsTo(Society, { foreignKey: 'society_id' });
 
+Society.hasMany(PatrolCheckpoint, { foreignKey: 'society_id' });
+PatrolCheckpoint.belongsTo(Society, { foreignKey: 'society_id' });
+
+Society.hasMany(PatrolLog, { foreignKey: 'society_id' });
+PatrolLog.belongsTo(Society, { foreignKey: 'society_id' });
+
 // Event relationships
 Event.hasMany(Payment, { foreignKey: 'eventId' });
 Payment.belongsTo(Event, { foreignKey: 'eventId' });
@@ -75,5 +83,7 @@ module.exports = {
   EventMember,
   Amenity,
   Booking,
-  Visitor
+  Visitor,
+  PatrolCheckpoint,
+  PatrolLog
 };
